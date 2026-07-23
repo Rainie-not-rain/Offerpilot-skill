@@ -69,7 +69,7 @@ output/
 
 四套模板均支持可选头像、7 种预设颜色和自定义 `#RRGGBB`。未指定颜色时使用案例默认色；指定颜色时，大标题、模块标题、分隔线、时间轴、项目符号或强调底色会相应调整，版式结构保持不变。
 
-| classic · 纯净单栏、黑白默认| compact · 三段式页眉、浅色分隔线 | modern · 左侧信息栏、右侧核心经历   |  timeline · 时间轴组织经历 |
+| classic · 纯净单栏、黑白默认| compact · 三段式页眉、浅色分隔线 | modern · 左侧信息栏、右侧核心经历 | timeline · 时间轴组织经历 |
 | --- | --- | --- | --- |
 | 适合ATS 投递、通用岗位、正式简历 | 适合校招、技术岗、内容较多且希望控制一页 | 适合互联网、AI 产品、产品经理、运营 | 适合经历密集、项目型候选人、强调发展脉络 |
 | <img src="assets/readme/template-classic.jpg" alt="Classic 模板" width="280"> | <img src="assets/readme/template-compact.jpg" alt="Compact 模板" width="280"> | <img src="assets/readme/template-modern.jpg" alt="Modern 模板" width="280"> | <img src="assets/readme/template-timeline.jpg" alt="Timeline 模板" width="280"> |
