@@ -2,8 +2,6 @@
 
 > 面向求职全流程的 Agent Skill：从岗位调研、证据映射和定向简历，到逐条面试准备与复盘迭代。
 
-[GitHub 仓库地址（待补充）](https://github.com/YOUR_GITHUB_USERNAME/offerpilot-skill) · [问题反馈（待补充）](https://github.com/YOUR_GITHUB_USERNAME/offerpilot-skill/issues)
-
 ## Skill 简介
 
 OfferPilot 不只是“润色简历”。它会先检查输入是否完整，再理解目标岗位、提炼岗位能力、核对候选人证据，最后生成可解释、可面试、可持续迭代的求职材料。
@@ -89,7 +87,7 @@ OfferPilot 基于 [Agent Skills](https://agentskills.io) 目录规范，可在 C
 
 ```text
 请从这个仓库安装 offerpilot-skill：
-https://github.com/YOUR_GITHUB_USERNAME/offerpilot-skill.git
+https://github.com/Rainie-not-rain/Offerpilot-skill.git
 
 请安装完整的 offerpilot-skill 文件夹，不要只复制 SKILL.md。
 请保留 assets、references、scripts、examples 和 agents 目录。
@@ -101,7 +99,7 @@ https://github.com/YOUR_GITHUB_USERNAME/offerpilot-skill.git
 先克隆仓库：
 
 ```bash
-git clone https://github.com/YOUR_GITHUB_USERNAME/offerpilot-skill.git
+git clone https://github.com/Rainie-not-rain/Offerpilot-skill.git
 ```
 
 安装到 Codex：
@@ -123,7 +121,7 @@ Cursor、OpenClaw 或其他 Agent Runtime：将完整的 `offerpilot-skill/` 复
 Windows PowerShell 示例：
 
 ```powershell
-git clone https://github.com/YOUR_GITHUB_USERNAME/offerpilot-skill.git
+git clone https://github.com/Rainie-not-rain/Offerpilot-skill.git
 Copy-Item -Recurse -Force .\offerpilot-skill "$env:USERPROFILE\.codex\skills\offerpilot-skill"
 ```
 
