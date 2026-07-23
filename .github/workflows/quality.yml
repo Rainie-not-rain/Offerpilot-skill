@@ -1,0 +1,178 @@
+name: Quality
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: OfferPilot quality checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Check required files and directories
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test -f SKILL.md
+          test -f README.md
+          test -f LICENSE
+
+          test -d agents
+          test -d assets
+          test -d references
+          test -d scripts
+          test -d examples
+
+          test -f agents/openai.yaml
+          test -f scripts/init_case.py
+          test -f scripts/csv_to_md.py
+          test -f scripts/quality_check.py
+          test -f scripts/generate_resume.py
+          test -f scripts/render_pdf.py
+
+      - name: Validate SKILL.md frontmatter
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          path = Path("SKILL.md")
+          text = path.read_text(encoding="utf-8-sig")
+
+          if not text.startswith("---"):
+              raise SystemExit("SKILL.md 必须以 YAML frontmatter 开头")
+
+          parts = text.split("---", 2)
+          if len(parts) < 3:
+              raise SystemExit("SKILL.md frontmatter 未正确闭合")
+
+          frontmatter = parts[1]
+
+          name_match = re.search(
+              r"(?m)^name:\s*([a-z0-9-]+)\s*$",
+              frontmatter
+          )
+          if not name_match:
+              raise SystemExit(
+                  "SKILL.md 缺少合法 name；仅允许小写字母、数字和连字符"
+              )
+
+          if not re.search(r"(?m)^description:\s*\S+", frontmatter):
+              raise SystemExit("SKILL.md 缺少 description")
+
+          print(f"Skill name: {name_match.group(1)}")
+          PY
+
+      - name: Compile Python scripts
+        run: |
+          python -m compileall -q scripts
+
+      - name: Check quality gate CLI
+        run: |
+          python scripts/quality_check.py --help
+
+      - name: Run quality gate smoke test
+        shell: bash
+        run: |
+          cat > "$RUNNER_TEMP/offerpilot-ci-case.json" <<'JSON'
+          {
+            "schema_version": "2.0",
+            "input_health": {
+              "company_role": "complete",
+              "market_language": "complete",
+              "jd": "complete",
+              "resume": "complete",
+              "application_status": "complete"
+            },
+            "sources": [],
+            "claims": [],
+            "resume": {
+              "input_format": "markdown",
+              "name": "CI Candidate",
+              "contact": "ci@example.com",
+              "application_type": "full_time",
+              "page_target": 1,
+              "photo_provided": false,
+              "education_input_count": 1,
+              "sections": [
+                {
+                  "type": "education",
+                  "entries": [
+                    {
+                      "school": "Test University"
+                    }
+                  ]
+                },
+                {
+                  "type": "projects",
+                  "entries": [
+                    {
+                      "background": "用于验证质量检查脚本能否处理结构完整且事实边界清晰的测试数据。",
+                      "bullets": [
+                        {
+                          "id": "project-1",
+                          "title": "质量流程验证",
+                          "text": "构建可重复执行的最小测试数据，覆盖输入健康度、简历结构和面试证据映射，并通过自动化检查确认流程结果。",
+                          "claim_ids": []
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "skills",
+                  "items": [
+                    {
+                      "category": "工具",
+                      "content": "Python、GitHub Actions"
+                    }
+                  ]
+                },
+                {
+                  "type": "self_evaluation",
+                  "items": [
+                    {
+                      "title": "特点",
+                      "content": "重视事实边界、结构完整性与可复现验证。"
+                    }
+                  ]
+                }
+              ]
+            },
+            "interview": {
+              "bullet_coverage": [
+                {
+                  "bullet_id": "project-1",
+                  "questions": [
+                    "为什么选择该测试结构？",
+                    "如何判断质量门通过？"
+                  ],
+                  "evidence": "由固定 JSON 输入和脚本退出码共同验证。",
+                  "boundaries": "仅验证机器质量门，不代表完整运行时兼容性。"
+                }
+              ],
+              "rounds": []
+            }
+          }
+          JSON
+
+          python scripts/quality_check.py \
+            "$RUNNER_TEMP/offerpilot-ci-case.json" \
+            --json
