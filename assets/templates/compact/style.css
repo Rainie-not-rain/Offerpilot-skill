@@ -1,0 +1,166 @@
+/* Compact：复刻 examples/简历案例/修改后-compact版.docx。 */
+@page {
+  size: A4;
+  margin: 12mm 15mm;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --accent: #7cb762;
+  --heading-accent: #222222;
+  --ink: #222222;
+  --muted: #555555;
+  --rule: #c8c8c8;
+}
+
+body {
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 8pt;
+  line-height: 1.01;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.page {
+  width: 180mm;
+  margin: 0 auto;
+}
+
+.hd {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(42mm, 1fr) auto;
+  align-items: center;
+  column-gap: 5mm;
+  margin-bottom: 2.2mm;
+}
+
+.name {
+  color: var(--heading-accent);
+  font-size: 18.5pt;
+  font-weight: 700;
+  line-height: 1.03;
+  margin-bottom: 1.5mm;
+}
+
+.intent {
+  color: var(--accent);
+  font-size: 9.5pt;
+  font-weight: 700;
+  line-height: 1.03;
+  margin-bottom: 0.8mm;
+}
+
+.intent-detail {
+  color: var(--muted);
+  font-size: 8pt;
+  line-height: 1.03;
+}
+
+.contact {
+  color: var(--muted);
+  font-size: 8pt;
+  line-height: 1.03;
+  text-align: right;
+}
+
+.contact span {
+  display: block;
+  margin-bottom: 1.2mm;
+}
+
+.photo {
+  width: 19.5mm;
+  height: 26mm;
+  object-fit: cover;
+}
+
+.summary {
+  color: var(--muted);
+  font-size: 8pt;
+  line-height: 1.12;
+  margin-bottom: 1.5mm;
+}
+
+.sec {
+  margin-top: 2.5mm;
+}
+
+.sec-title {
+  color: var(--accent);
+  font-size: 10.5pt;
+  font-weight: 700;
+  line-height: 1.03;
+  padding-bottom: 1.4mm;
+  margin-bottom: 1.4mm;
+  border-bottom: 0.75pt solid var(--rule);
+}
+
+.entry {
+  margin-bottom: 1.4mm;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.entry-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4mm;
+  margin-bottom: 1mm;
+}
+
+.entry-title strong {
+  color: var(--ink);
+  font-size: 9pt;
+}
+
+.entry-sub {
+  color: var(--ink);
+  font-size: 9pt;
+  margin-left: 1mm;
+}
+
+.entry-meta {
+  color: var(--muted);
+  font-size: 8pt;
+  white-space: nowrap;
+}
+
+ul {
+  list-style: none;
+}
+
+li {
+  position: relative;
+  padding-left: 3.4mm;
+  margin-bottom: 1mm;
+  color: var(--muted);
+  font-size: 8pt;
+  line-height: 1.01;
+}
+
+li::before {
+  content: "•";
+  position: absolute;
+  left: 0.8mm;
+  color: var(--accent);
+}
+
+ul.plain li {
+  padding-left: 3.4mm;
+}
+
+strong {
+  font-weight: 700;
+}
+
+code {
+  font-family: "Times New Roman", monospace;
+  font-size: 8pt;
+}

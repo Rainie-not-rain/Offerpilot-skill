@@ -1,0 +1,424 @@
+#!/usr/bin/env python3
+"""把 resume.md 渲染成 HTML，并离线输出 A4 PDF。
+
+resume.md 的约定（详见 references/field-schema.md）：
+- YAML front matter：放姓名、联系方式、求职意向、个人简介等原子字段。
+- 正文用 `## ` 分节（教育背景 / 实习经历 / 项目经验 / 专业技能 / 荣誉奖项 …）。
+- 每节内用 `### ` 表示一条「经历条目」，标题里用 ` | ` 分隔正标题与时间/地点等元信息，
+  正标题内可用 ` · `、`・` 或 `•` 分隔（如「沧澜智算 · 基础架构部 · 后端开发实习生」）。
+- `- ` 开头的行是要点（bullet）。没有 `### ` 的节（如技能）直接由要点组成。
+
+渲染后端用 WeasyPrint（纯 Python，无需浏览器，对中文与打印 CSS 支持好）。
+请使用已安装 WeasyPrint 等依赖的 Python 3 解释器运行。
+
+用法：
+    python render.py resume.md --template modern --out resume.pdf
+    python render.py resume.md            # 默认 classic，输出 resume.pdf
+    python render.py resume.md --html-only  # 只产出 HTML，便于调试
+"""
+import argparse
+import difflib
+import html
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+from markupsafe import Markup
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+SKILL_DIR = SCRIPT_DIR.parent
+TEMPLATES_DIR = SKILL_DIR / "assets" / "templates"
+BASE_STYLE_PATH = SKILL_DIR / "assets" / "resume-base.css"
+MIN_PYTHON = (3, 10)
+SUPPORTED_META_FIELDS = {
+    "name",
+    "gender",
+    "birth",
+    "phone",
+    "email",
+    "location",
+    "hometown",
+    "wechat",
+    "github",
+    "website",
+    "linkedin",
+    "photo",
+    "intent",
+    "intent_detail",
+    "summary",
+}
+META_FIELD_ALIASES = {
+    "姓名": "name",
+    "性别": "gender",
+    "出生日期": "birth",
+    "电话": "phone",
+    "手机号": "phone",
+    "邮箱": "email",
+    "现居住地": "location",
+    "户籍所在地": "hometown",
+    "微信": "wechat",
+    "微信号": "wechat",
+    "个人主页": "website",
+    "博客": "website",
+    "领英": "linkedin",
+    "照片": "photo",
+    "头像": "photo",
+    "求职意向": "intent",
+    "期望职位": "intent",
+    "求职详情": "intent_detail",
+    "个人简介": "summary",
+    "自我评价": "summary",
+}
+
+
+def die(msg):
+    print(f"[render] 错误：{msg}", file=sys.stderr)
+    sys.exit(1)
+
+
+def warn(msg):
+    print(f"[render] 警告：{msg}", file=sys.stderr)
+
+
+def ensure_parent(path):
+    Path(path).parent.mkdir(parents=True, exist_ok=True)
+
+
+def require_python_version(version_info=None):
+    version_info = version_info or sys.version_info
+    if tuple(version_info[:2]) < MIN_PYTHON:
+        current = ".".join(str(v) for v in version_info[:3])
+        die(
+            f"需要 Python {MIN_PYTHON[0]}.{MIN_PYTHON[1]} 或更高版本，"
+            f"当前为 Python {current}"
+        )
+
+
+def warn_unused_meta(meta):
+    for key in sorted(set(meta) - SUPPORTED_META_FIELDS):
+        suggestion = META_FIELD_ALIASES.get(key)
+        if suggestion is None:
+            matches = difflib.get_close_matches(
+                str(key),
+                sorted(SUPPORTED_META_FIELDS),
+                n=1,
+                cutoff=0.72,
+            )
+            suggestion = matches[0] if matches else None
+        suffix = f"；是否想写 `{suggestion}`？" if suggestion else ""
+        warn(f"front matter 字段 `{key}` 不会被模板使用{suffix}")
+
+
+def validate_resume(meta, sections):
+    if not str(meta.get("name", "")).strip():
+        die("resume.md 缺少必填字段 name")
+    warn_unused_meta(meta)
+    if not str(meta.get("intent", "")).strip() and not str(
+        meta.get("intent_detail", "")
+    ).strip():
+        warn("简历头部没有求职意向；如需展示，请填写 intent 或 intent_detail")
+
+
+def require_deps(need_pdf=True):
+    missing = []
+    try:
+        import frontmatter  # noqa: F401
+    except ImportError:
+        missing.append("python-frontmatter")
+    try:
+        import jinja2  # noqa: F401
+    except ImportError:
+        missing.append("jinja2")
+    if missing:
+        die("缺少依赖：\n"
+            "    python3 -m pip install "
+            + " ".join(missing))
+
+
+# ---------- Markdown 解析 ----------
+
+# 链接允许的 scheme 白名单（不区分大小写）；javascript:/data:/file: 等一律拒绝
+LINK_SCHEMES = ("http", "https", "mailto")
+
+
+def inline_md(text):
+    """最小行内 Markdown -> HTML：转义后处理 **加粗**、*斜体*、`代码`、`[文字](链接)`。
+
+    链接最先处理：先把 `[文字](URL)` 替换成占位符，强调/代码替换完成后再回填
+    生成的 <a> 标签。这样 URL 里的 `*`、`` ` `` 等字符不会参与强调匹配，
+    生成的 <a> 标签也不会被后续正则破坏——比单纯调整正则先后顺序更可靠。
+    text 已整体 html 转义，因此链接文字与 href 里的 URL 都是转义后的安全内容。
+    """
+    text = html.escape(text)
+    anchors = []
+
+    def stash_link(m):
+        label, url = m.group(1), m.group(2)
+        scheme = url.split(":", 1)[0].lower()
+        if scheme not in LINK_SCHEMES:
+            return label  # scheme 不在白名单：退化为纯文字，不生成 <a>
+        anchors.append(f'<a href="{url}">{label}</a>')
+        return f"\x00{len(anchors) - 1}\x00"
+
+    text = re.sub(r"\[([^\]]+)\]\(([^)\s]+)\)", stash_link, text)
+    text = re.sub(r"\*\*\*(.+?)\*\*\*", r"<strong><em>\1</em></strong>", text)
+    text = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", text)
+    text = re.sub(r"(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)", r"<em>\1</em>", text)
+    text = re.sub(r"`(.+?)`", r"<code>\1</code>", text)
+    text = re.sub(r"\x00(\d+)\x00", lambda m: anchors[int(m.group(1))], text)
+    return Markup(text)
+
+
+def parse_entry_heading(line):
+    """`### 沧澜智算 · 后端实习生 | 2025.08 – 2025.12 · 南京`
+    -> {title_parts: ["沧澜智算", "后端实习生"], meta: "2025.08 – 2025.12 · 南京"}
+    """
+    line = line.lstrip("#").strip()
+    heading_parts = re.split(r"\s*[|｜]\s*", line, maxsplit=1)
+    left = heading_parts[0]
+    meta = heading_parts[1] if len(heading_parts) > 1 else ""
+    parts = [p.strip() for p in re.split(r"\s*[·・•]\s*", left) if p.strip()]
+    return {"title_parts": parts, "meta": meta.strip()}
+
+
+def parse_resume(md_path):
+    import frontmatter
+
+    post = frontmatter.load(str(md_path))
+    meta = dict(post.metadata)
+    body = post.content
+
+    sections = []
+    current_section = None
+    current_entry = None
+
+    def flush_entry():
+        nonlocal current_entry
+        if current_entry is not None:
+            current_section["entries"].append(current_entry)
+            current_entry = None
+
+    for raw in body.splitlines():
+        line = raw.rstrip()
+        if not line.strip():
+            continue
+        if line.startswith("## ") and not line.startswith("### "):
+            flush_entry()
+            current_section = {"title": line[3:].strip(), "entries": [], "bullets": []}
+            sections.append(current_section)
+        elif line.startswith("### "):
+            if current_section is None:
+                continue
+            flush_entry()
+            current_entry = parse_entry_heading(line)
+            current_entry["bullets"] = []
+        elif line.lstrip().startswith(("- ", "* ")):
+            text = line.lstrip()[2:].strip()
+            target = current_entry if current_entry is not None else current_section
+            if target is not None:
+                target["bullets"].append(inline_md(text))
+        else:
+            # 自由段落：归到当前条目或节的 bullets
+            target = current_entry if current_entry is not None else current_section
+            if target is not None:
+                target["bullets"].append(inline_md(line.strip()))
+
+    flush_entry()
+    return meta, sections
+
+
+# ---------- 渲染 ----------
+
+SIDEBAR_KEYWORDS = ("技能", "证书", "求职", "意向", "语言", "联系")
+
+# 配色预设：覆盖模板里的 --accent。对应几款常见风格主色。
+ACCENT_PRESETS = {
+    "blue": "#2456a6",    # 清新蓝灰（默认偏蓝）
+    "teal": "#0a7d6b",    # 沉稳青绿
+    "wine": "#8a2433",    # 典雅酒红
+    "ink": "#2b2b2b",     # 极客墨黑
+    "purple": "#5b3b8c",  # 紫
+    "green": "#2e7d32",   # 绿
+    "orange": "#c65d21",  # 沉稳焦橙
+}
+
+
+def available_templates():
+    """返回真正可渲染的模板目录，忽略辅助目录和零散文件。"""
+    return sorted(
+        p.name
+        for p in TEMPLATES_DIR.iterdir()
+        if p.is_dir() and (p / "resume.html.j2").is_file()
+    )
+
+
+def render_html(meta, sections, template_name, accent=None):
+    import jinja2
+
+    tdir = TEMPLATES_DIR / template_name
+    if not (tdir / "resume.html.j2").exists():
+        avail = ", ".join(available_templates())
+        die(f"找不到模板 '{template_name}'。可用模板：{avail}")
+
+    base_css = BASE_STYLE_PATH.read_text(encoding="utf-8") if BASE_STYLE_PATH.exists() else ""
+    template_css = (tdir / "style.css").read_text(encoding="utf-8") if (tdir / "style.css").exists() else ""
+    css = f"{base_css}\n{template_css}"
+
+    # 配色覆盖：把 --accent 重定义追加到 css 末尾（后定义生效）
+    if accent:
+        color = ACCENT_PRESETS.get(accent)
+        if color is None:
+            if not re.fullmatch(r"#[0-9a-fA-F]{6}", accent):
+                die("配色必须是 blue/teal/wine/ink/purple/green/orange 或 #rrggbb")
+            color = accent
+        css += (
+            "\n:root { "
+            f"--accent: {color}; "
+            f"--heading-accent: {color}; "
+            "}\n"
+        )
+
+    # 给模板一个便捷分类：哪些节适合放到侧边栏（modern 用）
+    def is_sidebar(title):
+        return any(k in title for k in SIDEBAR_KEYWORDS)
+
+    env = jinja2.Environment(
+        loader=jinja2.FileSystemLoader(str(tdir)),
+        autoescape=True,
+        trim_blocks=True,
+        lstrip_blocks=True,
+    )
+    env.globals["is_sidebar"] = is_sidebar
+    tpl = env.get_template("resume.html.j2")
+    sidebar = [s for s in sections if is_sidebar(s["title"])]
+    main = [s for s in sections if not is_sidebar(s["title"])]
+    return tpl.render(meta=meta, sections=sections, sidebar=sidebar, main=main, css=Markup(css))
+
+
+def _pdf_page_count(pdf_path):
+    for module_name in ("pypdf", "PyPDF2"):
+        try:
+            module = __import__(module_name)
+            return len(module.PdfReader(str(pdf_path)).pages)
+        except Exception:
+            continue
+    return 1
+
+
+def _find_browser():
+    for name in ("chrome", "google-chrome", "chromium", "msedge"):
+        found = shutil.which(name)
+        if found:
+            return found
+    candidates = (
+        r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+        r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
+        r"C:\Program Files\Microsoft\Edge\Application\msedge.exe",
+        r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
+    )
+    return next((path for path in candidates if Path(path).is_file()), None)
+
+
+def _browser_to_pdf(html_string, pdf_path, base_url):
+    browser = _find_browser()
+    if not browser:
+        die("WeasyPrint 不可用，且未找到本机 Chrome/Edge")
+    base_url = Path(base_url).resolve()
+    ensure_parent(pdf_path)
+    with tempfile.TemporaryDirectory(prefix="offerpilot-") as profile:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".html", prefix=".offerpilot-", dir=base_url,
+            encoding="utf-8", delete=False
+        ) as handle:
+            handle.write(html_string)
+            html_file = Path(handle.name)
+        try:
+            result = subprocess.run(
+                [
+                    browser, "--headless=new", "--disable-gpu", "--disable-extensions",
+                    "--allow-file-access-from-files", "--no-pdf-header-footer",
+                    f"--user-data-dir={profile}",
+                    f"--print-to-pdf={Path(pdf_path).resolve()}",
+                    html_file.resolve().as_uri(),
+                ],
+                capture_output=True, text=True, timeout=90,
+            )
+            if result.returncode != 0 or not Path(pdf_path).is_file():
+                die(f"浏览器离线打印失败：{(result.stderr or result.stdout).strip()}")
+        finally:
+            html_file.unlink(missing_ok=True)
+    return _pdf_page_count(pdf_path)
+
+
+def html_to_pdf(html_string, pdf_path, base_url):
+    """优先 WeasyPrint，缺少原生库时使用本机 Chrome/Edge。"""
+    try:
+        from weasyprint import HTML
+        document = HTML(string=html_string, base_url=str(base_url)).render()
+        document.write_pdf(str(pdf_path))
+        return len(document.pages)
+    except (ImportError, OSError):
+        warn("WeasyPrint 不可用，改用本机 Chrome/Edge 离线打印 PDF")
+        return _browser_to_pdf(html_string, pdf_path, base_url)
+
+
+def html_output_path(md_path, template_name):
+    return md_path.with_suffix(f".{template_name}.html")
+
+
+def main():
+    ap = argparse.ArgumentParser(description="resume.md -> HTML -> PDF (WeasyPrint)")
+    ap.add_argument("md", help="resume.md 路径")
+    ap.add_argument(
+        "--template",
+        "-t",
+        default="classic",
+        help="模板名 (" + "/".join(available_templates()) + ")",
+    )
+    ap.add_argument(
+        "--accent",
+        "-a",
+        default=None,
+        help="配色：预设名 (blue/teal/wine/ink/purple/green/orange) 或 #rrggbb；覆盖所选模板的大标题、分隔线、时间轴和强调色",
+    )
+    ap.add_argument("--out", "-o", default=None, help="输出 PDF 路径")
+    ap.add_argument("--html-only", action="store_true", help="只产出 HTML（调试用）")
+    args = ap.parse_args()
+
+    require_python_version()
+    require_deps(need_pdf=not args.html_only)
+    md_path = Path(args.md)
+    if not md_path.exists():
+        die(f"找不到文件：{md_path}")
+
+    meta, sections = parse_resume(md_path)
+    validate_resume(meta, sections)
+    html_out = render_html(meta, sections, args.template, accent=args.accent)
+
+    html_path = html_output_path(md_path, args.template)
+    ensure_parent(html_path)
+    html_path.write_text(html_out, encoding="utf-8")
+    print(f"[render] 已生成 HTML：{html_path}")
+
+    if args.html_only:
+        return
+
+    pdf_path = (
+        Path(args.out)
+        if args.out
+        else SKILL_DIR / "output" / f"{md_path.stem}-{args.template}.pdf"
+    )
+    ensure_parent(pdf_path)
+    pages = html_to_pdf(html_out, pdf_path, base_url=md_path.parent)
+    print(f"[render] 已生成 PDF：{pdf_path}（模板：{args.template}）")
+    if pages > 1:
+        print(f"[render] 页数：{pages} ⚠ 超过 1 页，校招/海投建议精简到 1 页",
+              file=sys.stderr)
+    else:
+        print(f"[render] 页数：{pages}")
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,4 @@
+interface:
+  display_name: "offerpilot_skill｜AI 求职领航助手"
+  short_description: "从岗位调研、定向简历到逐条面试准备的全流程助手"
+  default_prompt: "使用 $offerpilot-skill 检查我的材料、调研目标岗位、生成定向简历，并基于最终版本准备面试。"

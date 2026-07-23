@@ -1,0 +1,162 @@
+/* Classic：复刻参考 Word 的纯黑单栏 ATS 版式。 */
+@page {
+  size: A4;
+  margin: 11.5mm 14.5mm;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --accent: #000000;
+  --heading-accent: #000000;
+}
+
+body {
+  font-family: var(--font-sans);
+  color: #000000;
+  font-size: 9pt;
+  line-height: 1;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.page {
+  width: 181mm;
+  margin: 0 auto;
+}
+
+.hd {
+  position: relative;
+  min-height: 25mm;
+  margin-bottom: 2.2mm;
+  text-align: center;
+}
+
+.name {
+  color: var(--heading-accent);
+  font-size: 17.5pt;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 1pt;
+  margin-bottom: 2.2mm;
+}
+
+.contact {
+  color: #000000;
+  font-size: 8.5pt;
+  line-height: 1;
+  margin-bottom: 2.2mm;
+}
+
+.intent {
+  color: #000000;
+  font-size: 9pt;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.intent-detail {
+  font-weight: 400;
+}
+
+.summary {
+  color: #000000;
+  font-size: 9pt;
+  line-height: 1.15;
+  margin-top: 2mm;
+  text-align: left;
+}
+
+.photo {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 19.5mm;
+  height: 26mm;
+  object-fit: cover;
+}
+
+.hd.has-photo .name,
+.hd.has-photo .contact,
+.hd.has-photo .intent,
+.hd.has-photo .summary {
+  padding-left: 21mm;
+  padding-right: 21mm;
+}
+
+.sec {
+  margin-bottom: 2mm;
+}
+
+.sec-title {
+  color: var(--heading-accent);
+  font-size: 11pt;
+  font-weight: 700;
+  line-height: 1;
+  padding-bottom: 1.1mm;
+  margin-top: 2mm;
+  margin-bottom: 1.4mm;
+  border-bottom: 1pt solid var(--heading-accent);
+}
+
+.entry {
+  margin-bottom: 1.4mm;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.entry-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4mm;
+  margin-bottom: 0.7mm;
+}
+
+.entry-title strong,
+.entry-sub,
+.entry-meta {
+  color: #000000;
+  font-size: 9pt;
+}
+
+.entry-sub {
+  margin-left: 1.2mm;
+}
+
+.entry-meta {
+  white-space: nowrap;
+}
+
+ul {
+  list-style: none;
+}
+
+ul li {
+  margin-bottom: 0.9mm;
+  color: #000000;
+  font-size: 9pt;
+  line-height: 1.12;
+}
+
+ul li::before {
+  content: none;
+}
+
+ul.plain li {
+  padding-left: 0;
+}
+
+strong {
+  font-weight: 700;
+}
+
+code {
+  color: #000000;
+  font-family: "Times New Roman", monospace;
+  font-size: 8.5pt;
+}

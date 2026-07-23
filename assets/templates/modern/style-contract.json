@@ -1,0 +1,51 @@
+{
+  "reference": "examples/简历案例/修改后-modern版.docx",
+  "reference_sha256": "DDE5A48332A39C8B04CF4C4A8B67FB61B125043C5FB3CC6A7346588978706063",
+  "page": {
+    "size": "A4",
+    "orientation": "portrait",
+    "margin_mm": {
+      "top": 0,
+      "right": 7,
+      "bottom": 0,
+      "left": 7
+    }
+  },
+  "columns": {
+    "sidebar_mm": 62,
+    "main_mm": 134,
+    "sidebar_percent": 29.7,
+    "main_percent": 70.3,
+    "sidebar_fill": "#EFF6EC"
+  },
+  "photo_mm": {
+    "width": 32,
+    "height": 42
+  },
+  "fonts": {
+    "east_asia": "Microsoft YaHei",
+    "latin": "Times New Roman",
+    "name_pt": 18.5,
+    "sidebar_heading_pt": 10,
+    "main_heading_pt": 12,
+    "body_pt": 8.5,
+    "date_pt": 8
+  },
+  "rhythm": {
+    "body_line_height": 1.25,
+    "heading_line_height": 1.02,
+    "bullet_left_indent_pt": 10.75,
+    "bullet_hanging_indent_pt": 7.35
+  },
+  "colors": {
+    "accent": "#7CB762",
+    "ink": "#222222",
+    "muted": "#555555"
+  },
+  "main_heading_rule": {
+    "edge": "left",
+    "width_pt": 2.75,
+    "space_pt": 5,
+    "color": "#7CB762"
+  }
+}
