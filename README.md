@@ -8,7 +8,7 @@
 [![License: CC BY-NC-ND 4.0](https://img.shields.io/badge/License-CC%20BY--NC--ND%204.0-lightgrey.svg)](LICENSE)
 [![Quality](https://github.com/Rainie-not-rain/Offerpilot-skill/actions/workflows/quality.yml/badge.svg)](https://github.com/Rainie-not-rain/Offerpilot-skill/actions/workflows/quality.yml)
 [![Agent Skills](https://img.shields.io/badge/Agent%20Skills-Standard-green.svg)](https://agentskills.io)
-[![Runtime](https://img.shields.io/badge/Runtime-Codex-blueviolet.svg)](#安装)
+[![Runtime](https://img.shields.io/badge/Runtime-Claude%20Code%20·%20Codex%20·%20Cursor%20·%20OpenClaw-blueviolet)](#安装)
 
 [Skill简介](#Skill简介) · [能做什么](#能做什么) · [怎么用](#怎么用) · [你将得到](#你将得到) · [模板效果](#模板效果) · [安装](#安装) · [使用指令模板](#使用指令模板)
 
