@@ -272,5 +272,3 @@ offerpilot-skill/
 本项目采用 [CC BY-NC-ND 4.0](LICENSE)(https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode)。
 
 允许个人学习、研究、教育及其他非商业用途。商业使用需要获得作者的单独授权。
-
-由于该许可证限制商业用途，本项目属于“源码可用（source-available）”，不属于 OSI 定义下的开源软件。
