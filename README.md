@@ -257,7 +257,7 @@ offerpilot-skill/
 
 ## License
 
-本项目采用 [PolyForm Noncommercial License 1.0.0](https://github.com/cosen1024/resume-builder-skill/blob/main/LICENSE)。
+本项目采用 [CC BY-NC-ND 4.0](LICENSE)(https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode)。
 
 允许个人学习、研究、教育及其他非商业用途。商业使用需要获得作者的单独授权。
 

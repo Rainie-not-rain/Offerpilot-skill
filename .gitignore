@@ -1,0 +1,33 @@
+# 环境变量和密钥
+.env
+.env.*
+*.key
+secrets.*
+
+# Python 缓存
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+
+# Python 虚拟环境
+.venv/
+venv/
+env/
+
+# 本地生成结果
+output/*
+!output/.gitkeep
+
+# 临时文件
+*.log
+*.tmp
+*.bak
+
+# 编辑器配置
+.vscode/
+.idea/
+
+# Windows / macOS
+Thumbs.db
+.DS_Store
