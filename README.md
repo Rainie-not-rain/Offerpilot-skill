@@ -1,8 +1,22 @@
-# OfferPilot｜从简历到面试的 AI 求职领航助手
+<div align="center">
+<h1> OfferPilot.skill</h1>
 
-> 面向求职全流程的 Agent Skill：从岗位调研、证据映射和定向简历，到逐条面试准备与复盘迭代。
+<img src="assets/banner.png" alt="OfferPilot" width="100%" />
 
-## Skill 简介
+> <h3>带你从岗位调研、定向简历，到逐条面试准备与复盘迭代。</h3>
+
+[![License: CC BY-NC-ND 4.0](https://img.shields.io/badge/License-CC%20BY--NC--ND%204.0-lightgrey.svg)](LICENSE)
+[![Quality](https://github.com/Rainie-not-rain/Offerpilot-skill/actions/workflows/quality.yml/badge.svg)](https://github.com/Rainie-not-rain/Offerpilot-skill/actions/workflows/quality.yml)
+[![Agent Skills](https://img.shields.io/badge/Agent%20Skills-Standard-green.svg)](https://agentskills.io)
+[![Runtime](https://img.shields.io/badge/Runtime-Codex-blueviolet.svg)](#安装)
+
+[Skill简介](#Skill简介) · [能做什么](#能做什么) · [怎么用](#怎么用) · [你将得到](#你将得到) · [模板效果](#模板效果) · [安装](#安装) · [使用指令模板](#使用指令模板)
+
+
+</div>
+
+
+## Skill简介
 
 OfferPilot 不只是“润色简历”。它会先检查输入是否完整，再理解目标岗位、提炼岗位能力、核对候选人证据，最后生成可解释、可面试、可持续迭代的求职材料。
 
@@ -21,7 +35,7 @@ OfferPilot 不只是“润色简历”。它会先检查输入是否完整，再
 | 面试准备 | 生成逐条 bullet 深挖、项目讲法、自我介绍、追问、预警问题和诚实兜底表达 |
 | 复盘迭代 | 根据用户补充事实、模拟回答和真实面试反馈，局部更新简历及面试材料 |
 
-## 你需要输入
+## 怎么用
 
 支持以下输入方式：
 
@@ -42,7 +56,7 @@ OfferPilot 不只是“润色简历”。它会先检查输入是否完整，再
 7. 可选证件照、作品集、项目材料和数据口径说明
 
 
-## 它为你输出
+## 你将得到
 
 OfferPilot 根据任务选择最小充分交付，不默认堆叠过程文件。常见成品包括：
 
@@ -69,7 +83,7 @@ output/
 
 四套模板均支持可选头像、7 种预设颜色和自定义 `#RRGGBB`。未指定颜色时使用案例默认色；指定颜色时，大标题、模块标题、分隔线、时间轴、项目符号或强调底色会相应调整，版式结构保持不变。
 
-| classic · 纯净单栏、黑白默认| compact · 三段式页眉、浅色分隔线 | modern · 左侧信息栏、右侧核心经历 | timeline · 时间轴组织经历 |
+| classic · 纯净单栏、黑白默认| compact · 三段式页眉、浅色分隔线 | modern · 左侧信息栏、右侧核心经历   |  timeline · 时间轴组织经历 |
 | --- | --- | --- | --- |
 | 适合ATS 投递、通用岗位、正式简历 | 适合校招、技术岗、内容较多且希望控制一页 | 适合互联网、AI 产品、产品经理、运营 | 适合经历密集、项目型候选人、强调发展脉络 |
 | <img src="assets/readme/template-classic.jpg" alt="Classic 模板" width="280"> | <img src="assets/readme/template-compact.jpg" alt="Compact 模板" width="280"> | <img src="assets/readme/template-modern.jpg" alt="Modern 模板" width="280"> | <img src="assets/readme/template-timeline.jpg" alt="Timeline 模板" width="280"> |
@@ -193,7 +207,7 @@ Copy-Item -Recurse -Force .\offerpilot-skill "$env:USERPROFILE\.codex\skills\off
 先指出高风险点，再给出不改变事实的优化版本，并提出下一轮追问。
 ```
 
-## Skill 目录
+## Skill目录
 
 ```text
 offerpilot-skill/
